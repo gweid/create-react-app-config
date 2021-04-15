@@ -79,12 +79,15 @@ const hasJsxRuntime = (() => {
 
 // This is the production and development configuration.
 // It is focused on developer experience, fast rebuilds, and a minimal bundle.
+// production 和 development 环境的 webpack 配置都在这里
+// 通过传进来的 webpackEnv 判断需要返回什么环境的 webpack 配置
 module.exports = function (webpackEnv) {
+  // 进行环境判断
   const isEnvDevelopment = webpackEnv === 'development';
   const isEnvProduction = webpackEnv === 'production';
 
-  // Variable used for enabling profiling in Production
-  // passed into alias object. Uses a flag if passed into the build command
+  // 就是 webpack --profile --json > stats.json 输出的 stats.json 获取相关的编译信息
+  // 用于分析编译结果，例如编译后包的大小
   const isEnvProductionProfile =
     isEnvProduction && process.argv.includes('--profile');
 
@@ -92,14 +95,21 @@ module.exports = function (webpackEnv) {
   // as %PUBLIC_URL% in `index.html` and `process.env.PUBLIC_URL` in JavaScript.
   // Omit trailing slash as %PUBLIC_URL%/xyz looks better than %PUBLIC_URL%xyz.
   // Get environment variables to inject into our app.
+  // 获取一些 env 相关的信息
   const env = getClientEnvironment(paths.publicUrlOrPath.slice(0, -1));
 
+  // 判断是否使用 react 的热替换（HMR），默认是开启状态
   const shouldUseReactRefresh = env.raw.FAST_REFRESH;
 
   // common function to get style loaders
+  // 获取与样式相关的 loader
   const getStyleLoaders = (cssOptions, preProcessor) => {
     const loaders = [
+      // 开发环境直接将 css 插入到 html 标签中
+      // 这里注意，isEnvDevelopment 如果是 false，那么会返回的是 [false]
+      // 这样子明显是不行的，但是后面巧妙地使用了 [false].filter(Boolean)，会过滤掉 false/undefined 之类的选项
       isEnvDevelopment && require.resolve('style-loader'),
+      // 生产环境，使用 MiniCssExtractPlugin 分离 css 文件
       isEnvProduction && {
         loader: MiniCssExtractPlugin.loader,
         // css is located in `static/css`, use '../../' to locate index.html folder
@@ -138,6 +148,8 @@ module.exports = function (webpackEnv) {
         },
       },
     ].filter(Boolean);
+
+    // 是否使用预处理器，例如 sass-loader 之类的
     if (preProcessor) {
       loaders.push(
         {
@@ -155,13 +167,19 @@ module.exports = function (webpackEnv) {
         }
       );
     }
+    // 把处理样式的 loader 配置返回
     return loaders;
   };
 
+  // 返回一份 webpack 配置
   return {
+    // mode 环境
     mode: isEnvProduction ? 'production' : isEnvDevelopment && 'development',
-    // Stop compilation early in production
+    // bail 设置为 true，那么在 compilation 阶段编译代码出错，就立即停止编译
+    // bail 设置为 false，compilation 阶段编译代码出错不会停止，而是等待代码修改
+    // 主要就是开发阶段需要设置为 false，编译出错需要等待代码修改后继续编译
     bail: isEnvProduction,
+    // 根据开发环境跟生产环境设置不同的 source-map
     devtool: isEnvProduction
       ? shouldUseSourceMap
         ? 'source-map'
