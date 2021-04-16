@@ -107,7 +107,7 @@ module.exports = function (webpackEnv) {
     const loaders = [
       // 开发环境直接将 css 插入到 html 标签中
       // 这里注意，isEnvDevelopment 如果是 false，那么会返回的是 [false]
-      // 这样子明显是不行的，但是后面巧妙地使用了 [false].filter(Boolean)，会过滤掉 false/undefined 之类的选项
+      // [false]这样子明显是不行的，但是后面巧妙地使用了 [false].filter(Boolean)，会过滤掉 false/undefined 之类的选项
       isEnvDevelopment && require.resolve('style-loader'),
       // 生产环境，使用 MiniCssExtractPlugin 分离 css 文件
       isEnvProduction && {
@@ -212,6 +212,7 @@ module.exports = function (webpackEnv) {
             // changing JS code would still trigger a refresh.
           ]
         : paths.appIndexJs,
+    // 配置出口
     output: {
       // The build folder.
       path: isEnvProduction ? paths.appBuild : undefined,
