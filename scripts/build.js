@@ -40,6 +40,7 @@ const WARN_AFTER_CHUNK_GZIP_SIZE = 1024 * 1024;
 const isInteractive = process.stdout.isTTY;
 
 // Warn and crash if required files are missing
+// 检测项目里面有没有存在 【入口html文件】 和 【入口js文件】
 if (!checkRequiredFiles([paths.appHtml, paths.appIndexJs])) {
   process.exit(1);
 }
@@ -53,19 +54,22 @@ const config = configFactory('production');
 // We require that you explicitly set browsers and do not fall back to
 // browserslist defaults.
 const { checkBrowsers } = require('react-dev-utils/browsersHelper');
+// 检测使用什么浏览器，默认根据 browserslist 去选择
 checkBrowsers(paths.appPath, isInteractive)
   .then(() => {
     // First, read the current file sizes in build directory.
     // This lets us display how much they changed later.
+    // 先读取 build 目录中的当前文件大小，可以让我们更直观的知道更改文件后打包体积增加了多少
     return measureFileSizesBeforeBuild(paths.appBuild);
   })
   .then(previousFileSizes => {
     // Remove all content but keep the directory so that
     // if you're in it, you don't end up in Trash
+    // 先清空 build 目录
     fs.emptyDirSync(paths.appBuild);
-    // Merge with the public folder
+    // 将 public 目录复制到 build 下面
     copyPublicFolder();
-    // Start the webpack build
+    // build 开启打包
     return build(previousFileSizes);
   })
   .then(
@@ -136,8 +140,10 @@ checkBrowsers(paths.appPath, isInteractive)
 function build(previousFileSizes) {
   console.log('Creating an optimized production build...');
 
+  // 调用 webpack 函数返回 compiler 对象
   const compiler = webpack(config);
   return new Promise((resolve, reject) => {
+    // 执行 compiler.run 方法，开始进行 webpack 编译
     compiler.run((err, stats) => {
       let messages;
       if (err) {
@@ -178,6 +184,7 @@ function build(previousFileSizes) {
         messages.warnings.length
       ) {
         console.log(
+          // 对输出文字进行颜色更改
           chalk.yellow(
             '\nTreating warnings as errors because process.env.CI = true.\n' +
               'Most CI servers set it automatically.\n'

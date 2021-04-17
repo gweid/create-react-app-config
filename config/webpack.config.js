@@ -187,6 +187,7 @@ module.exports = function (webpackEnv) {
       : isEnvDevelopment && 'cheap-module-source-map',
     // These are the "entry points" to our application.
     // This means they will be the "root" imports that are included in JS bundle.
+    // 确定入口
     entry:
       isEnvDevelopment && !shouldUseReactRefresh
         ? [
@@ -226,6 +227,7 @@ module.exports = function (webpackEnv) {
       // TODO: remove this when upgrading to webpack 5
       futureEmitAssets: true,
       // There are also additional JS chunk files if you use code splitting.
+      // 分包的时候怎么命名
       chunkFilename: isEnvProduction
         ? 'static/js/[name].[contenthash:8].chunk.js'
         : isEnvDevelopment && 'static/js/[name].chunk.js',
@@ -234,6 +236,7 @@ module.exports = function (webpackEnv) {
       // We inferred the "public path" (such as / or /my-project) from homepage.
       publicPath: paths.publicUrlOrPath,
       // Point sourcemap entries to original disk location (format as URL on Windows)
+      // 设置 sourcemap 模板
       devtoolModuleFilenameTemplate: isEnvProduction
         ? info =>
             path
@@ -246,12 +249,16 @@ module.exports = function (webpackEnv) {
       jsonpFunction: `webpackJsonp${appPackageJson.name}`,
       // this defaults to 'window', but by setting it to 'this' then
       // module chunks which are built will work in web workers as well.
+      // 打包库文件
       globalObject: 'this',
     },
+    // 优化相关配置
     optimization: {
+      // 根据环境是否开启
       minimize: isEnvProduction,
       minimizer: [
         // This is only used in production mode
+        // Terser 压缩 js 等相关的 js 文件的优化
         new TerserPlugin({
           terserOptions: {
             parse: {
@@ -293,6 +300,7 @@ module.exports = function (webpackEnv) {
           sourceMap: shouldUseSourceMap,
         }),
         // This is only used in production mode
+        // 压缩 css 等 css 相关的优化
         new OptimizeCSSAssetsPlugin({
           cssProcessorOptions: {
             parser: safePostCssParser,
@@ -315,6 +323,7 @@ module.exports = function (webpackEnv) {
       // Automatically split vendor and commons
       // https://twitter.com/wSokra/status/969633336732905474
       // https://medium.com/webpack/webpack-4-code-splitting-chunk-graph-and-the-splitchunks-optimization-be739a861366
+      // 代码分割
       splitChunks: {
         chunks: 'all',
         name: isEnvDevelopment,
@@ -322,15 +331,18 @@ module.exports = function (webpackEnv) {
       // Keep the runtime chunk separated to enable long term caching
       // https://twitter.com/wSokra/status/969679223278505985
       // https://github.com/facebook/create-react-app/issues/5358
+      // 将运行时代码抽离出来
       runtimeChunk: {
         name: entrypoint => `runtime-${entrypoint.name}`,
       },
     },
+    // 解决路径相关的问题
     resolve: {
       // This allows you to set a fallback for where webpack should look for modules.
       // We placed these paths second because we want `node_modules` to "win"
       // if there are any conflicts. This matches Node resolution mechanism.
       // https://github.com/facebook/create-react-app/issues/253
+      // 模块从哪里加载
       modules: ['node_modules', paths.appNodeModules].concat(
         modules.additionalModulePaths || []
       ),
@@ -340,9 +352,11 @@ module.exports = function (webpackEnv) {
       // https://github.com/facebook/create-react-app/issues/290
       // `web` extension prefixes have been added for better support
       // for React Native Web.
+      // 默认扩展名的配置
       extensions: paths.moduleFileExtensions
         .map(ext => `.${ext}`)
         .filter(ext => useTypeScript || !ext.includes('ts')),
+      // 配置别名
       alias: {
         // Support React Native Web
         // https://www.smashingmagazine.com/2016/08/a-glimpse-into-the-future-with-react-native-for-web/
@@ -369,6 +383,7 @@ module.exports = function (webpackEnv) {
         ]),
       ],
     },
+    // loader 的引用路径配置
     resolveLoader: {
       plugins: [
         // Also related to Plug'n'Play, but this time it tells webpack to load its loaders
@@ -380,14 +395,18 @@ module.exports = function (webpackEnv) {
       strictExportPresence: true,
       rules: [
         // Disable require.ensure as it's not a standard language feature.
+        // requireEnsure 设置为 false 代表不再使用 require.ensure 来进行异步加载
+        // require.ensure 是早期 webpack 进行异步加载的方式
         { parser: { requireEnsure: false } },
         {
           // "oneOf" will traverse all following loaders until one will
           // match the requirements. When no loader matches it will fall
           // back to the "file" loader at the end of the loader list.
+          // oneOf 代表一旦匹配到一个正确的 rule，就不会再匹配其他的 rule 了，主要是为了减少遍历每一个规则去匹配文件
           oneOf: [
             // TODO: Merge this config once `image/avif` is in the mime-db
             // https://github.com/jshttp/mime-db
+            // 一种新型的图片格式 avif
             {
               test: [/\.avif$/],
               loader: require.resolve('url-loader'),
@@ -622,11 +641,13 @@ module.exports = function (webpackEnv) {
       // It is absolutely essential that NODE_ENV is set to production
       // during a production build.
       // Otherwise React will be compiled in the very slow development mode.
+      // 定义环境变量
       new webpack.DefinePlugin(env.stringified),
       // This is necessary to emit hot updates (CSS and Fast Refresh):
       isEnvDevelopment && new webpack.HotModuleReplacementPlugin(),
       // Experimental hot reloading for React .
       // https://github.com/facebook/react/tree/master/packages/react-refresh
+      // 配合 loader 中的 react-refresh/babel 进行热更新
       isEnvDevelopment &&
         shouldUseReactRefresh &&
         new ReactRefreshWebpackPlugin({
@@ -644,12 +665,12 @@ module.exports = function (webpackEnv) {
       // a plugin that prints an error when you attempt to do this.
       // See https://github.com/facebook/create-react-app/issues/240
       isEnvDevelopment && new CaseSensitivePathsPlugin(),
-      // If you require a missing module and then `npm install` it, you still have
-      // to restart the development server for webpack to discover it. This plugin
-      // makes the discovery automatic so you don't have to restart.
-      // See https://github.com/facebook/create-react-app/issues/186
+      // 在开发环境中，如果引用一个模块，比如 require('css-loader')，发现没安装
+      // 那么就会报错退出，等安装了 css-loader 后重新重头开始编译
+      // 使用 WatchMissingNodeModulesPlugin 不会直接退出，而是等待你安装好 css-loader 后继续编译
       isEnvDevelopment &&
         new WatchMissingNodeModulesPlugin(paths.appNodeModules),
+      // 生产环境提取 css
       isEnvProduction &&
         new MiniCssExtractPlugin({
           // Options similar to the same options in webpackOptions.output
